@@ -2,27 +2,9 @@
 
 namespace stick
 {
-    int xVal;
-    int yVal;
+    double xVal;
+    double yVal;
     bool block = false;
-
-    // callback for myThread
-    void analogReadCallback()
-    {
-        u_int64_t xSum = 0;
-        u_int64_t ySum = 0;
-
-        for (int i = 0; i < 1000; i++)
-        {
-            xSum += analogRead(26);
-            ySum += analogRead(27);
-        }
-
-        block = true;
-        xVal = (int)xSum / 1000;
-        yVal = (int)ySum / 1000;
-        block = false;
-    }
 
     void Viper::setup()
     {
@@ -40,13 +22,10 @@ namespace stick
         pinMode(ISRClockPin, OUTPUT);
 
         // X Hall Effect Sensor on pin 26
-        pinMode(26, INPUT);
+        pinMode(ADCX_PIN, INPUT);
         // Y Hall Effect Sensor on pin 27
-        pinMode(27, INPUT);
-
-        m_readThread = Thread();
-        m_readThread.onRun(analogReadCallback);
-        m_readThread.setInterval(50);
+        pinMode(ADCY_PIN, INPUT);
+;
     }
 
     /******************************************************************************
@@ -74,6 +53,27 @@ namespace stick
 
         digitalWrite(ISRLatchPin, LOW); // disable shifting and enable input latching
         return value;
+    }
+
+    /******************************************************************************
+     * Read the hall sensors for the gimbals
+     *****************************************************************************/
+    void Viper::readGimbals()
+    {
+        double xSum = 0;
+        double ySum = 0;
+
+        for (int i = 0; i < 100; i++)
+        {
+            xSum += analogRead(ADCX_PIN);
+            ySum += analogRead(ADCY_PIN);
+            sleep_ms(1);
+        }
+
+        block = true;
+        xVal = xSum / 100;
+        yVal = ySum / 100;
+        block = false;
     }
 
     /******************************************************************************
@@ -187,15 +187,31 @@ namespace stick
                 m_gamepad.SetHat(3, HAT_DIR_C);
             }
 
-            //for (int i=0; i<32; i++) {
-            //        Serial.print(isrDigitalRead(i));
-            //        
-            //}
-            //Serial.println();
-
+            readGimbals();
             // Read the gimbals
             m_gamepad.SetX(map(xVal, 0, 1023, -32767, 32767));
             m_gamepad.SetY(map(yVal, 0, 1023, -32767, 32767));
+#ifdef DEBUG
+            for (int i=0; i<32; i++) {
+                    Serial.print(isrDigitalRead(i));
+                    
+            }
+            Serial.println();
+
+            Serial.print("X= ");
+            Serial.print(" ");
+            Serial.print(xVal);
+            Serial.print(" ");
+            Serial.print(map(xVal, 0, 1023, -32767, 32767));
+            Serial.print(" ");
+
+            Serial.print("Y= ");
+            Serial.print(" ");
+            Serial.print(yVal);
+            Serial.print(" ");
+            Serial.print(map(yVal, 0, 1023, -32767, 32767));
+            Serial.println();
+#endif
 
             // Send all inputs via HID
             // Nothing is send to your computer until this is called.

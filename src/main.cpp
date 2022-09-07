@@ -14,7 +14,6 @@
 
   Using:
   https://www.gitlab.com/realrobots/PicoGamepad
-  & RR Configurator
 */
 
 #include "viper/viper.h"
@@ -37,7 +36,7 @@ void setup()
 
 void loop()
 {
-  static unsigned long previousTime = 0;
+  static unsigned long previousTime = 0 ;
   unsigned long currentTime = millis();
   if (currentTime - previousTime >= 1000)
   {

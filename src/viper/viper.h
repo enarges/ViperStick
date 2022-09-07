@@ -1,7 +1,6 @@
 #ifndef VIPER_HPP
 #define VIPER_HPP
 
-#include <Thread.h>
 #include "gamepad/PicoGamepad.h"
 
 //Pin Assigments
@@ -49,25 +48,21 @@ namespace stick
 
     private:
         PicoGamepad m_gamepad;
-        
-        //Analog Read Thread
-        Thread      m_readThread;
-        int         m_xReading;
-        int         m_yReading;
 
         // ISR Pins on the Pico
         const uint8_t ISRLatchPin = 0; // connected to 74HC165 SH/LD (1) pin
         const uint8_t ISRClockPin = 1; // connected to 74HC165 CLK (2) pin
         const uint8_t ISRDataPin  = 2; // connected to 74HC165 QH (9) pin
 
-        const u_int8_t ADC0_PIN = 26;
-        const u_int8_t ADC1_PIN = 27;
+        const u_int8_t ADCX_PIN = 26;
+        const u_int8_t ADCY_PIN = 27;
         
         //Sample every 10ms
         const unsigned long SamplePeriod = 10;
         
         uint32_t    shift(pin_size_t dataPin, uint8_t clockPin, BitOrder bitOrder);
         int         isrDigitalRead(uint8_t pin);
+        void        readGimbals();
     };
 }
 
