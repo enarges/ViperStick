@@ -1,53 +1,47 @@
-#include "viper.h"
+#include "throttle.h"
 
 namespace stick
 {
-    double xVal;
-    double yVal;
-    bool block = false;
+    double throttle1Val;
+    double throttle2Val;
+    bool throttleBlock = false;
 
-    void Viper::setup()
+    void Throttle::setup()
     {
 
         PicoGamepad m_gamepad();
-
-        // X Hall Effect Sensor on pin 26
-        pinMode(26, INPUT);
-
-        // Y Hall Effect Sensor on pin 27
-        pinMode(27, INPUT);
 
         pinMode(ISRDataPin, INPUT);
         pinMode(ISRLatchPin, OUTPUT);
         pinMode(ISRClockPin, OUTPUT);
 
-        // X Hall Effect Sensor on pin 26
-        pinMode(ADCX_PIN, INPUT);
-        // Y Hall Effect Sensor on pin 27
-        pinMode(ADCY_PIN, INPUT);
+        // Throttle 1 Hall Effect Sensor on pin 26
+        pinMode(ADC_THROTTLE1_PIN, INPUT);
+        // Throttle 2 Hall Effect Sensor on pin 27
+        pinMode(ADC_THROTTLE2_PIN, INPUT);
 ;
     }
 
     /******************************************************************************
-     * 32bit ISR Shift routine
-     * Shifts the bits 1 bit at a time into a 32bit int
+     * 16bit ISR Shift routine
+     * Shifts the bits 1 bit at a time into a 16bit int
      *****************************************************************************/
-    uint32_t Viper::shift(pin_size_t dataPin, uint8_t clockPin, BitOrder bitOrder)
+    uint16_t Throttle::shift(pin_size_t dataPin, uint8_t clockPin, BitOrder bitOrder)
     {
-        uint32_t value = 0;
+        uint16_t value = 0;
         uint8_t i;
 
         digitalWrite(ISRClockPin, HIGH); // preset clock to retrieve first bit
         digitalWrite(ISRLatchPin, HIGH); // disable input latching and enable shifting
 
         // Loop through the bits in the registers
-        for (i = 0; i < 32; ++i)
+        for (i = 0; i < 16; ++i)
         {
             digitalWrite(clockPin, HIGH);
             if (bitOrder == LSBFIRST)
                 value |= digitalRead(dataPin) << i;
             else
-                value |= digitalRead(dataPin) << (31 - i);
+                value |= digitalRead(dataPin) << (15 - i);
             digitalWrite(clockPin, LOW);
         }
 
@@ -56,36 +50,36 @@ namespace stick
     }
 
     /******************************************************************************
-     * Read the hall sensors for the gimbals
+     * Read the hall sensors for the throttles
      *****************************************************************************/
-    void Viper::readGimbals()
+    void Throttle::readThrottles()
     {
         double xSum = 0;
         double ySum = 0;
 
         for (int i = 0; i < 100; i++)
         {
-            xSum += analogRead(ADCX_PIN);
-            ySum += analogRead(ADCY_PIN);
+            throttle1Val += analogRead(ADC_THROTTLE1_PIN);
+            throttle2Val += analogRead(ADC_THROTTLE2_PIN);
             sleep_ms(1);
         }
 
-        block = true;
-        xVal = xSum / 100;
-        yVal = ySum / 100;
-        block = false;
+        throttleBlock = true;
+        throttle1Val = xSum / 100;
+        throttle2Val = ySum / 100;
+        throttleBlock = false;
     }
 
     /******************************************************************************
      * Read the value of a specific pin
      *****************************************************************************/
-    int Viper::isrDigitalRead(uint8_t pin)
+    int Throttle::isrDigitalRead(uint8_t pin)
     {
         uint32_t value = shift(ISRDataPin, ISRClockPin, MSBFIRST);
         return bitRead(value, pin);
     }
 
-    void Viper::readStick()
+    void Throttle::readStick()
     {
         static unsigned long previousTime = 0;
         unsigned long currentTime = millis();
@@ -93,29 +87,25 @@ namespace stick
         {
             // readInputsWithDigitalRead();
             previousTime = currentTime;
+
             // Read the buttons
-            m_gamepad.SetButton(0, isrDigitalRead(PADDLE));
-            m_gamepad.SetButton(1, isrDigitalRead(PINKIE));
-            m_gamepad.SetButton(2, isrDigitalRead(TRIG_1));
-            m_gamepad.SetButton(3, isrDigitalRead(TRIG_2));
-            m_gamepad.SetButton(4, isrDigitalRead(WEPRLS));
-            m_gamepad.SetButton(5, isrDigitalRead(NWS));
-            m_gamepad.SetButton(6, isrDigitalRead(TRIM_PB));
+            m_gamepad.SetButton(0, isrDigitalRead(PB));
+
 
             // Read the Hats
-            if (isrDigitalRead(TRIM_N))
+            if (isrDigitalRead(HAT_1_N))
             {
                 m_gamepad.SetHat(0, HAT_DIR_N);
             }
-            else if (isrDigitalRead(TRIM_E))
+            else if (isrDigitalRead(HAT_1_E))
             {
                 m_gamepad.SetHat(0, HAT_DIR_E);
             }
-            else if (isrDigitalRead(TRIM_S))
+            else if (isrDigitalRead(HAT_1_S))
             {
                 m_gamepad.SetHat(0, HAT_DIR_S);
             }
-            else if ((isrDigitalRead(TRIM_W)))
+            else if ((isrDigitalRead(HAT_1_W)))
             {
                 m_gamepad.SetHat(0, HAT_DIR_W);
             }
@@ -124,19 +114,19 @@ namespace stick
                 m_gamepad.SetHat(0, HAT_DIR_C);
             }
 
-            if (isrDigitalRead(TMS_N))
+            if (isrDigitalRead(HAT_2_N))
             {
                 m_gamepad.SetHat(1, HAT_DIR_N);
             }
-            else if (isrDigitalRead(TMS_E))
+            else if (isrDigitalRead(HAT_2_E))
             {
                 m_gamepad.SetHat(1, HAT_DIR_E);
             }
-            else if (isrDigitalRead(TMS_S))
+            else if (isrDigitalRead(HAT_2_S))
             {
                 m_gamepad.SetHat(1, HAT_DIR_S);
             }
-            else if ((isrDigitalRead(TMS_W)))
+            else if ((isrDigitalRead(HAT_2_W)))
             {
                 m_gamepad.SetHat(1, HAT_DIR_W);
             }
@@ -145,52 +135,23 @@ namespace stick
                 m_gamepad.SetHat(1, HAT_DIR_C);
             }
 
-            if (isrDigitalRead(CMS_N))
-            {
-                m_gamepad.SetHat(2, HAT_DIR_N);
-            }
-            else if (isrDigitalRead(CMS_E))
-            {
-                m_gamepad.SetHat(2, HAT_DIR_E);
-            }
-            else if (isrDigitalRead(CMS_S))
-            {
-                m_gamepad.SetHat(2, HAT_DIR_S);
-            }
-            else if ((isrDigitalRead(CMS_W)))
+            if (isrDigitalRead(EXT))
             {
                 m_gamepad.SetHat(2, HAT_DIR_W);
+            }
+            else if (isrDigitalRead(RET))
+            {
+                m_gamepad.SetHat(2, HAT_DIR_E);
             }
             else
             {
                 m_gamepad.SetHat(2, HAT_DIR_C);
             }
 
-            if (isrDigitalRead(DMS_N))
-            {
-                m_gamepad.SetHat(3, HAT_DIR_N);
-            }
-            else if (isrDigitalRead(DMS_E))
-            {
-                m_gamepad.SetHat(3, HAT_DIR_E);
-            }
-            else if (isrDigitalRead(DMS_S))
-            {
-                m_gamepad.SetHat(3, HAT_DIR_S);
-            }
-            else if ((isrDigitalRead(DMS_W)))
-            {
-                m_gamepad.SetHat(3, HAT_DIR_W);
-            }
-            else
-            {
-                m_gamepad.SetHat(3, HAT_DIR_C);
-            }
-
-            readGimbals();
+            readThrottles();
             // Read the gimbals
-            m_gamepad.SetX(map(xVal, 0, 1023, -32767, 32767));
-            m_gamepad.SetY(map(yVal, 0, 1023, -32767, 32767));
+            m_gamepad.SetThrottle(map(throttle1Val, 0, 1023, -32767, 32767));
+            m_gamepad.SetS0(map(throttle2Val, 0, 1023, -32767, 32767));
 #ifdef DEBUG
             for (int i=0; i<32; i++) {
                     Serial.print(isrDigitalRead(i));

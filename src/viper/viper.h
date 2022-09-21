@@ -3,38 +3,48 @@
 
 #include "gamepad/PicoGamepad.h"
 
+#define DEBUG
+
 //Pin Assigments
 //Chip1
-#define TRIM_W  0
-#define TRIM_PB 1
-#define TRIM_E  2
-#define TRIM_N  3
-
-#define CMS_S 4
-#define CMS_E 5
-#define CMS_N 6
-#define CMS_W 7
+#define DMS_N 4
+#define DMS_E 5
+#define DMS_W 6
+#define DMS_S 7
 
 //Chip2
-#define DMS_N 8
-#define DMS_S 9
-#define DMS_E 10
-#define DMS_W 11
+#define TRIM_N  8
+#define TRIM_S  9
+#define TRIM_PB 10
+#define NWS     11
 
-#define TRIM_S 13
-#define WEPRLS 14
-#define NWS    15
+#define PADDLE 12
+#define PINKIE 13
+#define TRIG_1 14
+#define TRIG_2 15
 
 //Chip3
-#define TMS_W 16
-#define TMS_E 17
-#define TMS_N 18
-#define TMS_S 19
+#define TRIM_W  16
+#define TRIM_E  17
+#define WEPRLS 18
 
-#define PINKIE 20
-#define PADDLE 21
-#define TRIG_2 22
-#define TRIG_1 23
+#define TMS_E 20
+#define TMS_S 21
+#define TMS_N 22
+#define TMS_W 23
+
+//Chip4
+#define CMS_S 24
+#define CMS_N 25
+#define CMS_E 26
+#define CMS_W 27
+
+
+
+
+
+
+
 
 namespace stick
 {

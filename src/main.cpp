@@ -17,8 +17,15 @@
 */
 
 #include "viper/viper.h"
+#include "throttle/throttle.h"
 
+#ifdef STICK
 stick::Viper m_stick;
+#else
+stick::Throttle m_stick;
+#endif
+
+
 
 /******************************************************************************
  * Setup Routine
