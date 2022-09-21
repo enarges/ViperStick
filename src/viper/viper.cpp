@@ -11,12 +11,6 @@ namespace stick
 
         PicoGamepad m_gamepad();
 
-        // X Hall Effect Sensor on pin 26
-        pinMode(26, INPUT);
-
-        // Y Hall Effect Sensor on pin 27
-        pinMode(27, INPUT);
-
         pinMode(ISRDataPin, INPUT);
         pinMode(ISRLatchPin, OUTPUT);
         pinMode(ISRClockPin, OUTPUT);
